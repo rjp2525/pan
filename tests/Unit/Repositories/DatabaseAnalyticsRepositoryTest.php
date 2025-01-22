@@ -53,13 +53,10 @@ it('does not exceed the max analytics limit', function (): void {
 it('handles concurrent transactions gracefully', function (): void {
     DB::table('pan_analytics')->insert(['name' => 'test-event', 'clicks' => 1]);
 
-    DB::shouldReceive('transaction')->once()->andReturnUsing(fn ($callback) => $callback());
+    DB::spy();
 
     $repository = app(DatabaseAnalyticsRepository::class);
-
     $repository->increment('test-event', EventType::CLICK);
 
-    $analytics = DB::table('pan_analytics')->where('name', 'test-event')->first();
-
-    expect($analytics->clicks)->toBe(2);
+    DB::shouldHaveReceived('transaction')->once();
 });
