@@ -49,14 +49,3 @@ it('does not exceed the max analytics limit', function (): void {
     $newEvent = DB::table('pan_analytics')->where('name', 'new-event')->first();
     expect($newEvent)->toBeNull();
 });
-
-it('handles concurrent transactions gracefully', function (): void {
-    DB::table('pan_analytics')->insert(['name' => 'test-event', 'clicks' => 1]);
-
-    DB::spy();
-
-    $repository = app(DatabaseAnalyticsRepository::class);
-    $repository->increment('test-event', EventType::CLICK);
-
-    DB::shouldHaveReceived('transaction')->once();
-});

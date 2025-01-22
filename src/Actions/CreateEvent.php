@@ -23,9 +23,13 @@ final readonly class CreateEvent
 
     /**
      * Executes the action.
+     *
+     * @param  EventType|array<array-key,EventType>  $event
      */
-    public function handle(string $name, EventType $event): void
+    public function handle(string $name, EventType|array $event): void
     {
-        $this->repository->increment($name, $event);
+        is_array($event)
+            ? $this->repository->incrementEach($name, $event)
+            : $this->repository->increment($name, $event);
     }
 }
