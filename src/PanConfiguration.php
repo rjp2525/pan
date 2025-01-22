@@ -22,6 +22,7 @@ final class PanConfiguration
         private array $allowedAnalytics = [],
         private string $routePrefix = 'pan',
         private array $analyticDescriptions = [],
+        private bool $tenancy = false,
     ) {
         //
     }
@@ -66,6 +67,16 @@ final class PanConfiguration
     public function setRoutePrefix(string $prefix): void
     {
         $this->routePrefix = $prefix;
+    }
+
+    /**
+     * Sets tenancy identification.
+     *
+     * @internal
+     */
+    public function setTenancy(bool $enable = true): void
+    {
+        $this->tenancy = $enable;
     }
 
     /**
@@ -117,6 +128,16 @@ final class PanConfiguration
     }
 
     /**
+     * Sets whether or not to enable tenancy identification.
+     *
+     * @internal
+     */
+    public static function tenancy(bool $enable = true): void
+    {
+        self::instance()->setTenancy($enable);
+    }
+
+    /**
      * Sets the analytics descriptions
      *
      * @param  array<string, string>  $descriptions
@@ -137,6 +158,7 @@ final class PanConfiguration
         self::allowedAnalytics([]);
         self::routePrefix('pan');
         self::analyticDescriptions([]);
+        self::tenancy(false);
     }
 
     /**
@@ -147,6 +169,7 @@ final class PanConfiguration
      *     allowed_analytics: array<int, string>,
      *     route_prefix: string,
      *     analytic_descriptions: array<string, string>,
+     *     tenancy: boolean,
      * }
      *
      * @internal
@@ -158,6 +181,7 @@ final class PanConfiguration
             'allowed_analytics' => $this->allowedAnalytics,
             'route_prefix' => $this->routePrefix,
             'analytic_descriptions' => $this->analyticDescriptions,
+            'tenancy' => $this->tenancy,
         ];
     }
 }

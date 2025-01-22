@@ -2,5 +2,6 @@ parameters:
     level: max
     paths:
         - src
-
+    ignoreErrors:
+        - '#Function tenant not found#'
     reportUnmatchedIgnoredErrors: false

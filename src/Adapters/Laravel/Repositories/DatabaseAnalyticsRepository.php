@@ -21,6 +21,7 @@ final readonly class DatabaseAnalyticsRepository implements AnalyticsRepository
      *      allowed_analytics: array<int, string>,
      *      route_prefix: string,
      *      analytic_descriptions: array<string, string>,
+     *      tenancy: boolean,
      *  }
      */
     private array $config;
@@ -47,7 +48,7 @@ final readonly class DatabaseAnalyticsRepository implements AnalyticsRepository
             impressions: (int) $analytic->impressions, // @phpstan-ignore-line
             hovers: (int) $analytic->hovers, // @phpstan-ignore-line
             clicks: (int) $analytic->clicks, // @phpstan-ignore-line,
-            description: $this->config['analytic_descriptions'][$analytic->name] ?? null, // @phpstan-ignore-line
+            description: $analytic->description ?? $this->config['analytic_descriptions'][$analytic->name] ?? null, // @phpstan-ignore-line
         ))->toArray();
 
         return $all;
@@ -62,15 +63,24 @@ final readonly class DatabaseAnalyticsRepository implements AnalyticsRepository
             return;
         }
 
+        $tenantData = $this->tenancyEnabled() ? ['tenant_id' => tenant('id')] : [];
+
         if ($this->isNewAnalytic($name)) {
             if ($this->canAddMoreAnalytics()) {
-                DB::table('pan_analytics')->insert(['name' => $name, $event->column() => 1]);
+                DB::table('pan_analytics')->insert([
+                    'name' => $name,
+                    $event->column() => 1,
+                    ...$tenantData,
+                ]);
             }
 
             return;
         }
 
-        DB::table('pan_analytics')->where('name', $name)->increment($event->column());
+        DB::table('pan_analytics')
+            ->when($this->tenancyEnabled(), fn ($q) => $q->where('tenant_id', tenant('id')))
+            ->where('name', $name)
+            ->increment($event->column());
     }
 
     /**
@@ -84,17 +94,27 @@ final readonly class DatabaseAnalyticsRepository implements AnalyticsRepository
             return;
         }
 
+        $tenantData = $this->tenancyEnabled() ? ['tenant_id' => tenant('id')] : [];
+
         if ($this->isNewAnalytic($name)) {
             if ($this->canAddMoreAnalytics()) {
-                $data = array_merge(['name' => $name], array_fill_keys(array_map(fn (EventType $event): string => $event->column(), $events), 1));
-
-                DB::table('pan_analytics')->insert($data);
+                DB::table('pan_analytics')->insert([
+                    'name' => $name,
+                    ...array_fill_keys(
+                        array_map(fn (EventType $event): string => $event->column(), $events),
+                        1
+                    ),
+                    ...$tenantData,
+                ]);
             }
 
             return;
         }
 
-        DB::table('pan_analytics')->where('name', $name)->incrementEach(array_fill_keys(array_map(fn (EventType $event): string => $event->column(), $events), 1));
+        DB::table('pan_analytics')
+            ->when($this->tenancyEnabled(), fn ($q) => $q->where('tenant_id', tenant('id')))
+            ->where('name', $name)
+            ->incrementEach(array_fill_keys(array_map(fn (EventType $event): string => $event->column(), $events), 1));
     }
 
     /**
@@ -103,6 +123,16 @@ final readonly class DatabaseAnalyticsRepository implements AnalyticsRepository
     public function flush(): void
     {
         DB::table('pan_analytics')->truncate();
+    }
+
+    /**
+     * Check if tenancy is enabled and available
+     */
+    private function tenancyEnabled(): bool
+    {
+        ['tenancy' => $tenancy] = $this->config;
+
+        return $tenancy && function_exists('tenancy') && function_exists('tenant');
     }
 
     /**
