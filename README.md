@@ -57,7 +57,7 @@ Finally, you may start tracking your pages or components adding the `data-pan` a
 </div>
 ```
 
-> [!IMPORTANT]  
+> [!IMPORTANT]
 > Event names must only contain letters, numbers, dashes, and underscores.
 
 ## Visualize your product analytics
@@ -98,6 +98,18 @@ If you want to have unlimited analytics records, you may use the `Pan::unlimited
 ```php
 PanConfiguration::unlimitedAnalytics();
 ```
+
+## Provide a human description for your analytics
+
+If you want to add a human-readable description to your analytics, you may use the `PanConfiguration::analyticsDescriptions` method:
+
+```php
+PanConfiguration::analyticDescriptions([
+    'button-cta' => 'Call to action button',
+]);
+```
+
+These descriptions will be shown when you visualize your analytics via the `pan` Artisan command.
 
 ## Configure the route prefix
 
